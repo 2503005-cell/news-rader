@@ -1,0 +1,52 @@
+
+name: Deploy News Radar
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Extract project
+        run: |
+          mkdir site
+          unzip -q news-radar-github-pages-1.zip -d site
+
+      - name: Install and collect news
+        run: |
+          cd site
+          npm install
+          npm run update-news
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload website
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/public
+
+      - name: Deploy website
+        uses: actions/deploy-pages@v4
